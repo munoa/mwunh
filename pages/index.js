@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 export default function Home() {
-  // --- Lang toggle (FR / EN) ---
-  const [lang, setLang] = useState('fr');
+  // --- Lang toggle (FR / EN) — EN by default ---
+  const [lang, setLang] = useState('en');
   useEffect(() => {
     const saved = typeof window !== 'undefined' && localStorage.getItem('lang');
     if (saved === 'en' || saved === 'fr') setLang(saved);
@@ -13,13 +13,15 @@ export default function Home() {
     if (typeof window !== 'undefined') localStorage.setItem('lang', next);
   }
 
-  // --- Texts (sans emojis) ---
+  // --- Texts (no emojis) ---
   const t = {
     fr: {
       title: 'Demande de miniature',
       subtitle: 'Décris ta demande, je reviens avec des propositions.',
       identity: 'Identité (qui êtes-vous ?)',
       identity_ph: 'Nom / Pseudo / Chaîne YouTube',
+      contact: 'Contact (si pas déjà dans l’identité)',
+      contact_ph: 'Discord, e-mail, Twitter…',
       video: 'Titre de la vidéo (ou sujet)',
       video_ph: 'Ex: 100 jours sur Subnautica',
       brief: 'Brief / détails',
@@ -27,7 +29,7 @@ export default function Home() {
         'Style, éléments à mettre, contraintes de texte, couleurs, références, etc.',
       links: 'Liens utiles (plusieurs possibles)',
       add_link: '+ Ajouter un autre lien',
-      deadline: 'Deadline (si il y a)',
+      deadline: 'Deadline (s’il y en a une)',
       send: 'Envoyer',
       sending: 'Envoi…',
       ok: 'Merci ! Ta demande a bien été envoyée.',
@@ -38,8 +40,10 @@ export default function Home() {
       subtitle: 'Describe what you need, I’ll come back with proposals.',
       identity: 'Identity (who are you?)',
       identity_ph: 'Name / Alias / YouTube channel',
+      contact: 'Contact (if not in identity)',
+      contact_ph: 'Discord, email, X/Twitter…',
       video: 'Video title (or topic)',
-      video_ph: 'Ex: 100 days on Subnautica',
+      video_ph: '100 days on Subnautica',
       brief: 'Brief / details',
       brief_ph:
         'Style, elements to include, text constraints, colors, references, etc.',
@@ -102,23 +106,23 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
-      {/* Soft white glow behind the card (N&B) */}
+      {/* Soft white glow behind the card (B&W) */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[560px] w-[560px] rounded-full blur-3xl opacity-[0.10] bg-white" />
       </div>
 
-      {/* Gif en bas à droite (taille réduite) */}
+      {/* Bottom-right gif */}
       <img
         src="/snorlax.gif"
         alt=""
         className="fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none"
       />
 
-      {/* Card (glass + glow + subtle border) */}
+      {/* Card (glass) */}
       <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
         {loading && <div className="progress" />}
 
-        {/* Lang toggle avec drapeaux FR/EN (SVG inline) */}
+        {/* Lang toggle with flags */}
         <div className="absolute right-3 top-3 z-10">
           <button
             type="button"
@@ -136,7 +140,7 @@ export default function Home() {
               </svg>
             </span>
             <span className="text-[11px] tracking-wide">{lang === 'fr' ? 'FR' : 'EN'}</span>
-            {/* EN (UK) flag simplified */}
+            {/* EN (UK) flag */}
             <span className="inline-flex w-4 h-3 overflow-hidden rounded-[2px] ring-1 ring-white/30">
               <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
                 <rect width="60" height="40" fill="#0A17A7" />
@@ -167,6 +171,17 @@ export default function Home() {
                 type="text"
                 required
                 placeholder={t.identity_ph}
+                className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-4 focus:ring-white/20 focus:border-white/30 placeholder-zinc-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]"
+              />
+            </div>
+
+            {/* NEW: Contact (optional) */}
+            <div>
+              <label className="text-sm text-zinc-300">{t.contact}</label>
+              <input
+                name="Contact"
+                type="text"
+                placeholder={t.contact_ph}
                 className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-4 focus:ring-white/20 focus:border-white/30 placeholder-zinc-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]"
               />
             </div>
