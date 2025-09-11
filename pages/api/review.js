@@ -10,27 +10,45 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { Decision, Name, Comment, ImageURL } = req.body || {};
+    const body = req.body || {};
     const ua = req.headers['user-agent'] || '';
     const now = new Date().toISOString();
 
-    const content =
-      `**New thumbnail feedback**\n` +
-      `• Decision: **${Decision || '—'}**\n` +
-      `• Name: ${Name || '—'}\n` +
-      `• Comment: ${Comment || '—'}\n` +
-      `• Image: ${ImageURL || '—'}\n` +
-      `• When: ${now}\n` +
-      `• UA: ${ua}`;
+    // Deux types possibles : "Request" (form d'accueil) ou "PreviewFeedback" (page client)
+    let content = '';
+    let embeds;
 
-    const payload = {
-      content,
-      embeds: ImageURL ? [{
-        title: 'Preview',
-        image: { url: ImageURL },
-      }] : undefined,
-    };
+    if (body.Type === 'Request') {
+      // Formulaire principal
+      content =
+        `**NEW THUMBNAIL REQUEST**\n` +
+        `• Identity: ${body['Identité'] || '—'}\n` +
+        `• Contact: ${body['Contact'] || '—'}\n` +
+        `• Title/Topic: ${body['Titre'] || '—'}\n` +
+        `• Brief: ${body['Brief'] || '—'}\n` +
+        `• Links: ${body['Liens'] || '—'}\n` +
+        `• Deadline: ${body['Deadline'] || '—'}\n` +
+        `• When: ${now}\n` +
+        `• UA: ${ua}`;
+    } else if (body.Type === 'PreviewFeedback') {
+      // Feedback sur la page client /[client]
+      content =
+        `**NEW PREVIEW FEEDBACK**\n` +
+        `• Client folder: ${body.Slug || '—'}\n` +
+        `• Name: ${body.Name || '—'}\n` +
+        `• Comment: ${body.Comment || '—'}\n` +
+        `• Reference image: ${body.RefImage || '—'}\n` +
+        `• When: ${now}\n` +
+        `• UA: ${ua}`;
 
+      if (body.RefImage) {
+        embeds = [{ title: 'Reference', image: { url: body.RefImage } }];
+      }
+    } else {
+      return res.status(400).json({ ok: false, error: 'Unknown payload Type' });
+    }
+
+    const payload = { content, embeds };
     const r = await fetch(DISCORD_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
