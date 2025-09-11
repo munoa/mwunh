@@ -1,4 +1,4 @@
-// pages/[client].js  — SSR + preview + bookmarklet
+// pages/[client].js  — SSR + flags + EN default + persisted lang
 import { useEffect, useMemo, useState } from 'react';
 import fs from 'fs';
 import path from 'path';
@@ -25,7 +25,7 @@ export async function getServerSideProps({ params }) {
 }
 
 export default function ClientPreview({ slug, images }) {
-  // Lang toggle (EN default)
+  // Lang toggle (EN default) + persistence
   const [lang, setLang] = useState('en');
   useEffect(() => {
     const saved = typeof window !== 'undefined' && localStorage.getItem('lang');
@@ -95,8 +95,7 @@ export default function ClientPreview({ slug, images }) {
     }
   }
 
-  // Bookmarklet qui remplacera une miniature aléatoire sur youtube.com.
-  // Astuce sécurité navigateur : on doit l'ajouter aux favoris puis le cliquer depuis YouTube.
+  // Bookmarklet pour remplacer une miniature sur YouTube
   const bookmarkletHref = useMemo(() => {
     const encoded = encodeURIComponent(refImage || '');
     const code = `
@@ -118,7 +117,6 @@ export default function ClientPreview({ slug, images }) {
     return 'javascript:' + encodeURIComponent(code);
   }, [refImage]);
 
-  // Petit mock "YouTube" local (pas de CORS) pour visualiser l’intégration
   const MockCard = () => (
     <div className="rounded-2xl overflow-hidden bg-black/50 border border-white/10">
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -149,16 +147,36 @@ export default function ClientPreview({ slug, images }) {
       <img src="/snorlax.gif" alt="" className="fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none" />
 
       <div className="relative w-full max-w-5xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
-        {/* Lang toggle */}
+        {/* Lang toggle with flags */}
         <div className="absolute right-3 top-3 z-10">
           <button
             type="button"
             onClick={toggleLang}
-            className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/20 transition"
+            className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/20 transition flex items-center gap-2"
             aria-label="Switch language"
             title="Switch language"
           >
-            {lang === 'fr' ? 'FR' : 'EN'}
+            {/* FR flag */}
+            <span className="inline-flex w-4 h-3 overflow-hidden rounded-[2px] ring-1 ring-white/30">
+              <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg">
+                <rect width="1" height="2" x="0" y="0" fill="#0055A4" />
+                <rect width="1" height="2" x="1" y="0" fill="#ffffff" />
+                <rect width="1" height="2" x="2" y="0" fill="#EF4135" />
+              </svg>
+            </span>
+            <span className="text-[11px] tracking-wide">{lang === 'fr' ? 'FR' : 'EN'}</span>
+            {/* EN (UK) flag */}
+            <span className="inline-flex w-4 h-3 overflow-hidden rounded-[2px] ring-1 ring-white/30">
+              <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="60" height="40" fill="#0A17A7" />
+                <path d="M0,0 60,40 M60,0 0,40" stroke="#ffffff" strokeWidth="8"/>
+                <path d="M0,0 60,40 M60,0 0,40" stroke="#CF142B" strokeWidth="4"/>
+                <rect x="26" width="8" height="40" fill="#ffffff"/>
+                <rect y="16" width="60" height="8" fill="#ffffff"/>
+                <rect x="27.5" width="5" height="40" fill="#CF142B"/>
+                <rect y="17.5" width="60" height="5" fill="#CF142B"/>
+              </svg>
+            </span>
           </button>
         </div>
 
