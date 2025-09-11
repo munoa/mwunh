@@ -5,27 +5,25 @@
 
 html, body, #__next { height: 100%; }
 
-/* Pure black & white backdrop with subtle depth */
+/* Fond noir uniforme (pas de dégradé -> pas de bandes) */
 body {
   @apply font-sans text-white;
-  background:
-    radial-gradient(900px 400px at 0% -10%, rgba(255,255,255,0.06), transparent 60%),
-    radial-gradient(700px 300px at 110% 110%, rgba(255,255,255,0.05), transparent 60%),
-    linear-gradient(135deg, #0b0b0b 0%, #0e0e10 40%, #0a0a0a 100%);
+  background-color: #0b0b0b; /* noir doux */
 }
 
-/* Grain overlay */
+/* Overlay grain pour casser tout banding, sans couleur */
 .grain:before {
   content: "";
   position: fixed;
   inset: 0;
   background-image: url('/grain.png');
-  opacity: .14;
+  background-size: 256px 256px;
+  opacity: .10;                 /* ajuste entre .06 et .14 selon ton goût */
   mix-blend-mode: overlay;
   pointer-events: none;
 }
 
-/* Indeterminate top progress bar (neutral) */
+/* Barre de progression neutre (lors de l’envoi) */
 .progress {
   position: absolute;
   top: 0; left: 0; right: 0;
