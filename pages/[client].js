@@ -1,4 +1,4 @@
-// pages/[client].js — SSR + Gallery + Fake YouTube feed (uses public/ytpool/*)
+// pages/[client].js — Gallery + Fake YouTube + Lightbox for selected image
 // EN default + flags + persisted lang, hide gif on mobile
 import { useEffect, useMemo, useState } from 'react';
 import fs from 'fs';
@@ -18,7 +18,7 @@ export async function getServerSideProps({ params }) {
       .map((f) => `/clients/${client}/${f}`);
     if (!images.length) return { notFound: true };
 
-    // Library for fake YouTube
+    // Pool for fake YouTube
     const libDir = path.join(process.cwd(), 'public', 'ytpool');
     let libImages = [];
     if (fs.existsSync(libDir)) {
@@ -35,7 +35,7 @@ export async function getServerSideProps({ params }) {
 }
 
 export default function ClientPreview({ slug, images, libImages }) {
-  // Lang toggle (EN default) + persistence
+  // Lang (EN default) + persistence
   const [lang, setLang] = useState('en');
   useEffect(() => {
     const saved = typeof window !== 'undefined' && localStorage.getItem('lang');
@@ -59,6 +59,8 @@ export default function ClientPreview({ slug, images, libImages }) {
       gallery: 'Galerie',
       ytMock: 'Aperçu style YouTube (fake 4×3)',
       mockNote: "Aperçu local simulé — ce n'est pas YouTube.",
+      viewLarge: 'Voir en grand',
+      close: 'Fermer'
     },
     en: {
       title: `Preview – ${slug}`,
@@ -71,6 +73,8 @@ export default function ClientPreview({ slug, images, libImages }) {
       gallery: 'Gallery',
       ytMock: 'YouTube-style preview (fake 4×3)',
       mockNote: 'Local simulated preview — this is not YouTube.',
+      viewLarge: 'View larger',
+      close: 'Close'
     }
   }[lang];
 
@@ -79,6 +83,18 @@ export default function ClientPreview({ slug, images, libImages }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null); // 'ok' | 'err' | null
   const [tab, setTab] = useState('gallery'); // 'gallery' | 'yt'
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+
+  // Close lightbox on ESC
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') setLightboxSrc(null);
+    }
+    if (lightboxSrc) {
+      window.addEventListener('keydown', onKey);
+      return () => window.removeEventListener('keydown', onKey);
+    }
+  }, [lightboxSrc]);
 
   async function submitFeedback(e) {
     e.preventDefault();
@@ -107,14 +123,13 @@ export default function ClientPreview({ slug, images, libImages }) {
   // ------- Fake YouTube helpers (seeded random for SSR/CSR consistency) -------
   const selectedRef = refImage || images[0];
 
-  // tiny hash -> seed
   function hashStr(s) {
     let h = 2166136261;
     for (let i = 0; i < s.length; i++) {
       h ^= s.charCodeAt(i);
       h = Math.imul(h, 16777619);
     }
-    return (h >>> 0) / 4294967296; // 0..1
+    return (h >>> 0) / 4294967296;
   }
   function mulberry32(a) {
     return function () {
@@ -172,7 +187,7 @@ export default function ClientPreview({ slug, images, libImages }) {
     </div>
   );
 
-  // 🔧 Minified meta row + removed right-side dot
+  // Minified meta row (no extra right dot)
   const YTCard = ({ src }) => (
     <div className="rounded-2xl overflow-hidden border border-white/10">
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -181,14 +196,12 @@ export default function ClientPreview({ slug, images, libImages }) {
           12:34
         </div>
       </div>
-      {/* meta row: tighter height */}
       <div className="px-3 py-2 flex gap-2">
         <div className="w-8 h-8 rounded-full bg-white/10 border border-white/10" />
         <div className="flex-1 pt-0.5">
           <div className="h-3.5 w-5/6 bg-white/20 rounded mb-1.5" />
           <div className="h-2.5 w-1/2 bg-white/10 rounded" />
         </div>
-        {/* removed the extra right-side round element */}
       </div>
     </div>
   );
@@ -196,7 +209,6 @@ export default function ClientPreview({ slug, images, libImages }) {
   const YTFeed = () => (
     <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/30">
       <TopBar />
-      {/* Grid 4×3 fixed */}
       <div className="p-4 grid grid-cols-4 gap-4">
         {ytGrid.map((src, i) => (
           <YTCard key={`${src}-${i}`} src={src} />
@@ -281,11 +293,10 @@ export default function ClientPreview({ slug, images, libImages }) {
               {images.map((url, i) => {
                 const selected = refImage === url;
                 return (
-                  <button
+                  <div
                     key={i}
-                    type="button"
                     onClick={() => setRefImage(url)}
-                    className={`group relative rounded-xl overflow-hidden border bg-black/40 transition
+                    className={`group relative rounded-xl overflow-hidden border bg-black/40 transition cursor-pointer
                       ${selected ? 'border-emerald-400/80 shadow-[0_0_0_3px_rgba(16,185,129,0.55)]' : 'border-white/10 hover:border-white/20'}`}
                     title="Set as reference"
                   >
@@ -297,12 +308,25 @@ export default function ClientPreview({ slug, images, libImages }) {
                         loading="lazy"
                       />
                     </div>
+
                     {selected && (
-                      <div className="absolute left-2 top-2 text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 backdrop-blur border border-emerald-400/50">
-                        {t.selected}
-                      </div>
+                      <>
+                        <div className="absolute left-2 top-2 text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 backdrop-blur border border-emerald-400/50">
+                          {t.selected}
+                        </div>
+                        {/* view larger button under the selected image */}
+                        <div className="border-t border-white/10 bg-black/30 p-3">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setLightboxSrc(url); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-black hover:scale-[1.02] active:scale-[.98] transition shadow"
+                          >
+                            {t.viewLarge}
+                          </button>
+                        </div>
+                      </>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -354,6 +378,31 @@ export default function ClientPreview({ slug, images, libImages }) {
           </form>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <div className="relative max-w-6xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setLightboxSrc(null)}
+              className="absolute -top-3 -right-3 md:top-2 md:right-2 h-9 w-9 rounded-full bg-white text-black text-lg font-bold shadow hover:scale-105 active:scale-95 transition"
+              aria-label={t.close}
+              title={t.close}
+            >
+              ×
+            </button>
+            <img
+              src={lightboxSrc}
+              alt="preview large"
+              className="w-full h-auto rounded-xl border border-white/10 shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
