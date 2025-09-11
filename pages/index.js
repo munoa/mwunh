@@ -54,11 +54,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
-      {/* Ambient gradient glows */}
-      <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-30 bg-gradient-to-br from-purple-500 to-emerald-400"></div>
-      <div className="pointer-events-none absolute bottom-[-60px] right-[-40px] h-96 w-96 rounded-full blur-3xl opacity-25 bg-gradient-to-br from-fuchsia-500 to-cyan-400"></div>
-
-      <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
         {loading && <div className="progress" />}
         <div className="p-8 md:p-10">
           <div className="mb-6">
@@ -140,7 +136,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl px-6 py-3 font-semibold bg-gradient-to-r from-zinc-100/90 to-white text-black shadow-lg hover:shadow-white/20 hover:scale-[1.01] transition active:scale-[.99] disabled:opacity-60 relative"
+              className="w-full rounded-2xl px-6 py-3 font-semibold bg-white text-black shadow-lg hover:shadow-white/20 hover:scale-[1.01] transition active:scale-[.99] disabled:opacity-60 relative"
             >
               <span className={loading ? 'opacity-0' : 'opacity-100'}>Envoyer ✨</span>
               {loading && (
