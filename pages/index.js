@@ -130,11 +130,11 @@ export default function Home() {
       </div>
 
       {/* Bottom-right gif */}
-      <img
-        src="/snorlax.gif"
-        alt=""
-        className="fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none"
-      />
+<img
+  src="/snorlax.gif"
+  alt=""
+  className="hidden md:block fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none"
+/>
 
       {/* Card (glass) */}
       <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
