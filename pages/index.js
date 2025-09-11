@@ -13,6 +13,24 @@ export default function Home() {
     if (typeof window !== 'undefined') localStorage.setItem('lang', next);
   }
 
+  // --- Preview(s) from query ?img=... or ?imgs=url1,url2 ---
+  const [previews, setPreviews] = useState([]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    const single = sp.get('img');
+    const many = sp.get('imgs');
+    if (single) setPreviews([decodeURIComponent(single)]);
+    else if (many) {
+      setPreviews(
+        many
+          .split(',')
+          .map((u) => decodeURIComponent(u.trim()))
+          .filter(Boolean)
+      );
+    }
+  }, []);
+
   // --- Texts (no emojis) ---
   const t = {
     fr: {
@@ -33,7 +51,17 @@ export default function Home() {
       send: 'Envoyer',
       sending: 'Envoi…',
       ok: 'Merci ! Ta demande a bien été envoyée.',
-      err: "Oups, l’envoi a échoué. Réessaie plus tard."
+      err: "Oups, l’envoi a échoué. Réessaie plus tard.",
+      reqWord: 'obligatoire',
+      // review
+      review_title: 'Proposition(s) de miniature',
+      review_name: 'Votre nom (optionnel)',
+      review_comment: 'Votre avis',
+      review_like: 'J’aime',
+      review_dislike: "Je n’aime pas",
+      review_send: 'Envoyer l’avis',
+      review_ok: 'Avis reçu. Merci !',
+      review_fail: "Échec de l’envoi."
     },
     en: {
       title: 'Thumbnail request',
@@ -53,7 +81,17 @@ export default function Home() {
       send: 'Send',
       sending: 'Sending…',
       ok: 'Thanks! Your request has been sent.',
-      err: 'Oops, failed to send. Please try again later.'
+      err: 'Oops, failed to send. Please try again later.',
+      reqWord: 'required',
+      // review
+      review_title: 'Thumbnail proposal(s)',
+      review_name: 'Your name (optional)',
+      review_comment: 'Your feedback',
+      review_like: 'Like',
+      review_dislike: 'Dislike',
+      review_send: 'Send feedback',
+      review_ok: 'Feedback sent. Thanks!',
+      review_fail: 'Failed to send.'
     }
   }[lang];
 
@@ -61,7 +99,7 @@ export default function Home() {
   const Req = () => (
     <>
       <span className="text-red-500 ml-1" aria-hidden="true">*</span>
-      <span className="sr-only"> required</span>
+      <span className="sr-only"> {t.reqWord}</span>
     </>
   );
 
@@ -112,6 +150,31 @@ export default function Home() {
     }
   }
 
+  // --- Send review (like / dislike / comment) for one preview -> to /api/review (Discord webhook behind)
+  const [reviewState, setReviewState] = useState({}); // { idx: {loading, ok, err} }
+  async function sendReview(idx, decision, name, comment, imageUrl) {
+    setReviewState((s) => ({ ...s, [idx]: { loading: true, ok: false, err: false } }));
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Decision: decision,
+          Name: name,
+          Comment: comment,
+          ImageURL: imageUrl
+        })
+      });
+      if (res.ok) {
+        setReviewState((s) => ({ ...s, [idx]: { loading: false, ok: true, err: false } }));
+      } else {
+        setReviewState((s) => ({ ...s, [idx]: { loading: false, ok: false, err: true } }));
+      }
+    } catch {
+      setReviewState((s) => ({ ...s, [idx]: { loading: false, ok: false, err: true } }));
+    }
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
       {/* Soft white glow behind the card (B&W) */}
@@ -127,7 +190,7 @@ export default function Home() {
       />
 
       {/* Card (glass) */}
-      <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
+      <div className="relative w-full max-w-4xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
         {loading && <div className="progress" />}
 
         {/* Lang toggle with flags */}
@@ -164,6 +227,27 @@ export default function Home() {
         </div>
 
         <div className="p-8 md:p-10">
+          {/* PREVIEW SECTION (only if query has img/imgs) */}
+          {previews.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-xl font-semibold mb-4">{t.review_title}</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                {previews.map((url, idx) => (
+                  <PreviewCard
+                    key={idx}
+                    idx={idx}
+                    url={url}
+                    t={t}
+                    state={reviewState[idx] || { loading: false, ok: false, err: false }}
+                    onSend={sendReview}
+                  />
+                ))}
+              </div>
+              <hr className="border-white/10 my-8" />
+            </section>
+          )}
+
+          {/* REQUEST FORM */}
           <div className="mb-6">
             <h1 className="text-3xl font-semibold tracking-tight drop-shadow-[0_1px_0_rgba(255,255,255,0.15)]">
               {t.title}
@@ -299,5 +383,79 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+/* ---- Preview card component ---- */
+function PreviewCard({ idx, url, t, onSend, state }) {
+  const [name, setName] = useState('');
+  const [comment, setComment] = useState('');
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-4 shadow-lg shadow-black/30">
+      <a href={url} target="_blank" rel="noreferrer" className="block">
+        <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-black/40">
+          <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+            <img
+              src={url}
+              alt="thumbnail preview"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </a>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onSend(idx, 'like', name, comment, url)}
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/20 transition"
+          disabled={state.loading}
+        >
+          {t.review_like}
+        </button>
+        <button
+          type="button"
+          onClick={() => onSend(idx, 'dislike', name, comment, url)}
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 hover:bg-white/20 transition"
+          disabled={state.loading}
+        >
+          {t.review_dislike}
+        </button>
+      </div>
+
+      <div className="mt-3">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={t.review_name}
+          className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 outline-none focus:ring-4 focus:ring-white/15 placeholder-zinc-500"
+        />
+      </div>
+      <div className="mt-2">
+        <textarea
+          rows="3"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder={t.review_comment}
+          className="w-full rounded-lg bg-black/40 border border-white/15 px-3 py-2 outline-none focus:ring-4 focus:ring-white/15 placeholder-zinc-500"
+        />
+      </div>
+
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => onSend(idx, 'comment', name, comment, url)}
+          className="w-full rounded-lg bg-white text-black px-4 py-2 font-semibold hover:shadow-white/30 hover:scale-[1.01] transition disabled:opacity-60"
+          disabled={state.loading}
+        >
+          {t.review_send}
+        </button>
+        {state.ok && <p className="text-emerald-400/90 text-sm pt-2">{t.review_ok}</p>}
+        {state.err && <p className="text-red-400/90 text-sm pt-2">{t.review_fail}</p>}
+      </div>
+    </div>
   );
 }
