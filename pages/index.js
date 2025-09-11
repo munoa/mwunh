@@ -45,7 +45,7 @@ export default function Home() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-6">
   <div>
     <label className="text-sm text-zinc-300">Identité (qui êtes-vous ?)</label>
     <input
