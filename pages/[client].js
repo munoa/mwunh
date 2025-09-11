@@ -1,18 +1,15 @@
-// pages/[client].js
+// pages/[client].js  — VERSION SSR
 import { useEffect, useState } from 'react';
+import fs from 'fs';
+import path from 'path';
 
-export async function getStaticPaths() {
-  // Pas de paths connus à l'avance -> génération à la demande
-  return { paths: [], fallback: 'blocking' };
-}
-
-export async function getStaticProps({ params }) {
+export async function getServerSideProps({ params }) {
   const { client } = params;
-  const fs = (await import('fs')).default;
-  const path = (await import('path')).default;
 
   try {
     const dir = path.join(process.cwd(), 'public', 'clients', client);
+    if (!fs.existsSync(dir)) return { notFound: true };
+
     const files = fs.readdirSync(dir);
     const images = files
       .filter((f) => /\.(png|jpe?g|webp|gif)$/i.test(f))
@@ -21,11 +18,7 @@ export async function getStaticProps({ params }) {
 
     if (!images.length) return { notFound: true };
 
-    return {
-      props: { slug: client, images },
-      // Revalidé régulièrement (ISR)
-      revalidate: 60
-    };
+    return { props: { slug: client, images } };
   } catch {
     return { notFound: true };
   }
@@ -192,7 +185,7 @@ export default function ClientPreview({ slug, images }) {
                 <span className="absolute inset-0 flex items-center justify-center">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" d="M4 12a 8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="currentColor"></path>
+                    <path className="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="currentColor"></path>
                   </svg>
                 </span>
               )}
