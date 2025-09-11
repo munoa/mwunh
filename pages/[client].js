@@ -1,5 +1,5 @@
-// pages/[client].js  — VERSION SSR
-import { useEffect, useState } from 'react';
+// pages/[client].js  — SSR + preview + bookmarklet
+import { useEffect, useMemo, useState } from 'react';
 import fs from 'fs';
 import path from 'path';
 
@@ -40,28 +40,33 @@ export default function ClientPreview({ slug, images }) {
   const t = {
     fr: {
       title: `Preview – ${slug}`,
-      tip: 'Clique sur une image pour la définir comme référence (optionnel).',
+      tip: 'Clique sur une image pour la définir comme référence.',
       selected: 'Image de référence',
-      name: 'Votre nom (optionnel)',
       comment: 'Votre feedback',
       send: 'Envoyer le feedback',
       ok: 'Merci ! Feedback envoyé.',
-      err: "Oups, échec de l’envoi."
+      err: "Oups, échec de l’envoi.",
+      ytMock: 'Aperçu style YouTube (mock)',
+      openYT: 'Ouvrir YouTube',
+      bmHelp: 'Glisse ce lien dans ta barre de favoris puis clique-le sur YouTube',
+      bmText: 'Remplacer une miniature aléatoire (bookmarklet)'
     },
     en: {
       title: `Preview – ${slug}`,
-      tip: 'Click an image to set it as reference (optional).',
+      tip: 'Click an image to set it as reference.',
       selected: 'Reference image',
-      name: 'Your name (optional)',
       comment: 'Your feedback',
       send: 'Send feedback',
       ok: 'Thanks! Feedback sent.',
-      err: 'Oops, failed to send.'
+      err: 'Oops, failed to send.',
+      ytMock: 'YouTube-style preview (mock)',
+      openYT: 'Open YouTube',
+      bmHelp: 'Drag this link to your bookmarks bar, then click it on YouTube',
+      bmText: 'Swap a random thumbnail (bookmarklet)'
     }
   }[lang];
 
   const [refImage, setRefImage] = useState('');
-  const [name, setName] = useState('');
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null); // 'ok' | 'err' | null
@@ -77,7 +82,6 @@ export default function ClientPreview({ slug, images }) {
         body: JSON.stringify({
           Type: 'PreviewFeedback',
           Slug: slug,
-          Name: name,
           Comment: comment,
           RefImage: refImage || ''
         })
@@ -90,6 +94,49 @@ export default function ClientPreview({ slug, images }) {
       setLoading(false);
     }
   }
+
+  // Bookmarklet qui remplacera une miniature aléatoire sur youtube.com.
+  // Astuce sécurité navigateur : on doit l'ajouter aux favoris puis le cliquer depuis YouTube.
+  const bookmarkletHref = useMemo(() => {
+    const encoded = encodeURIComponent(refImage || '');
+    const code = `
+(function(){
+  try{
+    var u='${encoded}'; u=decodeURIComponent(u);
+    if(!/^https?:/i.test(u)){ u = prompt('Image URL to inject', u)||''; }
+    if(!u) return;
+    var sel=[].slice.call(document.querySelectorAll('ytd-thumbnail img, img#thumbnail, a#thumbnail img'));
+    sel = sel.filter(function(i){ return i && i.width>=120; });
+    if(sel.length===0){ alert('No thumbnails found'); return; }
+    var i = sel[Math.floor(Math.random()*sel.length)];
+    i.src = u; i.srcset=''; i.removeAttribute('srcset'); i.style.objectFit='cover';
+    var card = i.closest('ytd-rich-item-renderer')||i.closest('ytd-grid-video-renderer')||i.closest('ytd-compact-video-renderer');
+    if(card){ card.style.outline='4px solid #10b981'; card.style.borderRadius='12px'; }
+    alert('Thumbnail swapped!');
+  }catch(e){ alert('Failed: '+e); }
+})();`;
+    return 'javascript:' + encodeURIComponent(code);
+  }, [refImage]);
+
+  // Petit mock "YouTube" local (pas de CORS) pour visualiser l’intégration
+  const MockCard = () => (
+    <div className="rounded-2xl overflow-hidden bg-black/50 border border-white/10">
+      <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+        <img
+          src={refImage || images[0]}
+          alt="mock"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </div>
+      <div className="p-3 flex gap-3">
+        <div className="w-9 h-9 rounded-full bg-white/10 border border-white/10" />
+        <div className="flex-1">
+          <div className="h-4 w-5/6 bg-white/20 rounded mb-2" />
+          <div className="h-3 w-3/5 bg-white/10 rounded" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
@@ -121,42 +168,64 @@ export default function ClientPreview({ slug, images }) {
 
           {/* Grid images */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-            {images.map((url, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setRefImage(url)}
-                className={`group relative rounded-xl overflow-hidden border ${refImage === url ? 'border-white/70' : 'border-white/10'} bg-black/40`}
-                title="Set as reference"
-              >
-                <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-                  <img
-                    src={url}
-                    alt={`preview ${i + 1}`}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
-                    loading="lazy"
-                  />
-                </div>
-                {refImage === url && (
-                  <div className="absolute left-2 top-2 text-xs px-2 py-1 rounded bg-white/20 backdrop-blur border border-white/30">
-                    {t.selected}
+            {images.map((url, i) => {
+              const selected = refImage === url;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setRefImage(url)}
+                  className={`group relative rounded-xl overflow-hidden border bg-black/40 transition
+                    ${selected ? 'border-emerald-400/80 shadow-[0_0_0_3px_rgba(16,185,129,0.55)]' : 'border-white/10 hover:border-white/20'}`}
+                  title="Set as reference"
+                >
+                  <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                    <img
+                      src={url}
+                      alt={`preview ${i + 1}`}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
+                      loading="lazy"
+                    />
                   </div>
-                )}
-              </button>
-            ))}
+                  {selected && (
+                    <div className="absolute left-2 top-2 text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 backdrop-blur border border-emerald-400/50">
+                      {t.selected}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Feedback form */}
-          <form onSubmit={submitFeedback} className="mt-8 space-y-4">
-            <div>
-              <label className="text-sm text-zinc-300">{t.name}</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-4 focus:ring-white/20"
-              />
+          {/* YouTube-style mock + bookmarklet helper */}
+          <div className="mt-10">
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <h2 className="text-sm text-zinc-300">{t.ytMock}</h2>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://www.youtube.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs px-3 py-1 rounded-full bg-white text-black hover:opacity-90 transition"
+                >
+                  {t.openYT}
+                </a>
+                <a
+                  href={bookmarkletHref}
+                  className="text-[11px] px-3 py-1 rounded-full bg-white/10 border border-white/15 hover:bg-white/20 transition"
+                  title={t.bmHelp}
+                  draggable
+                >
+                  {t.bmText}
+                </a>
+              </div>
             </div>
+            <MockCard />
+            <p className="text-[11px] text-zinc-400 mt-2">{t.bmHelp}.</p>
+          </div>
+
+          {/* Feedback form (no name field) */}
+          <form onSubmit={submitFeedback} className="mt-8 space-y-4">
             <div>
               <label className="text-sm text-zinc-300"> {t.comment} </label>
               <textarea
