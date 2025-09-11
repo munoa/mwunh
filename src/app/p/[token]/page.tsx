@@ -1,13 +1,14 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { prisma } from "@/lib/prisma";
 import ThumbnailCard from "@/components/ThumbnailCard";
 import { notFound } from "next/navigation";
 
-export default async function ClientPage({ params }: { params: { token: string }}) {
-  // Pendant le build, on ne touche pas la DB → on évite le crash
+export default async function ClientPage({ params }: { params: { token: string } }) {
   if (!process.env.DATABASE_URL) return notFound();
+
+  // ⬇️ Import Prisma uniquement en runtime
+  const { prisma } = await import("@/lib/prisma");
 
   const project = await prisma.project.findUnique({
     where: { token: params.token },
