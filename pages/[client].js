@@ -52,7 +52,7 @@ export default function ClientPreview({ slug, images, libImages }) {
       title: `Preview – ${slug}`,
       tip: 'Clique sur une image pour la définir comme référence.',
       selected: 'Image de référence',
-      comment: 'Votre feedback',
+      comment: 'Votre feedback sur la miniature sélectionnée',
       send: 'Envoyer le feedback',
       ok: 'Merci ! Feedback envoyé.',
       err: "Oups, échec de l’envoi.",
@@ -64,7 +64,7 @@ export default function ClientPreview({ slug, images, libImages }) {
       title: `Preview – ${slug}`,
       tip: 'Click an image to set it as reference.',
       selected: 'Reference image',
-      comment: 'Your feedback',
+      comment: 'Your feedback on the selected thumbnail',
       send: 'Send feedback',
       ok: 'Thanks! Feedback sent.',
       err: 'Oops, failed to send.',
@@ -118,26 +118,23 @@ export default function ClientPreview({ slug, images, libImages }) {
   }
   function mulberry32(a) {
     return function () {
-      a |= 0; a = a + 0x6D2B79F5 | 0;
-      let t = Math.imul(a ^ a >>> 15, 1 | a);
-      t ^= t + Math.imul(t ^ t >>> 7, 61 | t);
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
   function seededRng(seedStr) {
-    // combine two hashes for better dispersion
     const a = Math.floor(hashStr(seedStr) * 1e9);
     return mulberry32(a);
   }
   function sampleK(pool, k, rng) {
     const arr = [...pool];
-    // Fisher–Yates partial shuffle
     for (let i = 0; i < Math.min(k, arr.length); i++) {
       const j = i + Math.floor(rng() * (arr.length - i));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     let out = arr.slice(0, Math.min(k, arr.length));
-    // if not enough, cycle from start
     while (out.length < k && pool.length) {
       out.push(pool[out.length % pool.length]);
     }
@@ -150,11 +147,9 @@ export default function ClientPreview({ slug, images, libImages }) {
     const rng = seededRng(seed);
 
     const eleven = sampleK(pool, 11, rng);
-    // pick random slot 0..11 for the selected ref
     const insertAt = Math.floor(rng() * 12);
     const twelve = [...eleven];
     twelve.splice(insertAt, 0, selectedRef);
-    // ensure length exactly 12
     return twelve.slice(0, 12);
   }, [slug, selectedRef, libImages, images]);
   // ---------------------------------------------------------------------------
@@ -177,7 +172,7 @@ export default function ClientPreview({ slug, images, libImages }) {
     </div>
   );
 
-  // No green outline here (only gallery shows selection outline)
+  // 🔧 Minified meta row + removed right-side dot
   const YTCard = ({ src }) => (
     <div className="rounded-2xl overflow-hidden border border-white/10">
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -186,13 +181,14 @@ export default function ClientPreview({ slug, images, libImages }) {
           12:34
         </div>
       </div>
-      <div className="p-3 flex gap-3">
-        <div className="w-9 h-9 rounded-full bg-white/10 border border-white/10" />
-        <div className="flex-1">
-          <div className="h-4 w-5/6 bg-white/20 rounded mb-2" />
-          <div className="h-3 w-3/5 bg-white/10 rounded" />
+      {/* meta row: tighter height */}
+      <div className="px-3 py-2 flex gap-2">
+        <div className="w-8 h-8 rounded-full bg-white/10 border border-white/10" />
+        <div className="flex-1 pt-0.5">
+          <div className="h-3.5 w-5/6 bg-white/20 rounded mb-1.5" />
+          <div className="h-2.5 w-1/2 bg-white/10 rounded" />
         </div>
-        <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10" />
+        {/* removed the extra right-side round element */}
       </div>
     </div>
   );
