@@ -6,14 +6,15 @@ import ProjectList from "@/components/ProjectList";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminPage() {
-  // Évite l’accès DB pendant le build (DATABASE_URL non injectée)
+  // ⚠️ Au build (Docker), DATABASE_URL n'est pas injectée.
+  // On évite tout appel Prisma pour ne pas casser le build.
   if (!process.env.DATABASE_URL) {
     return (
       <main className="space-y-8">
         <AdminCreateForm />
         <ProjectList projects={[]} />
         <p className="text-sm opacity-60">
-          Build sans DATABASE_URL : la liste des projets sera chargée à l’exécution (runtime).
+          Build sans DATABASE_URL : la liste se chargera à l’exécution.
         </p>
       </main>
     );
