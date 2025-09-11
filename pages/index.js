@@ -13,42 +13,42 @@ export default function Home() {
     if (typeof window !== 'undefined') localStorage.setItem('lang', next);
   }
 
-  // --- Texts ---
+  // --- Texts (sans emojis) ---
   const t = {
     fr: {
       title: 'Demande de miniature',
-      subtitle: 'Décris ta demande, je reviens avec des propositions 🔥',
+      subtitle: 'Décris ta demande, je reviens avec des propositions.',
       identity: 'Identité (qui êtes-vous ?)',
       identity_ph: 'Nom / Pseudo / Chaîne YouTube',
       video: 'Titre de la vidéo (ou sujet)',
-      video_ph: 'Ex: 100 jours sur Cobblemon',
+      video_ph: 'Ex: 100 jours sur Subnautica',
       brief: 'Brief / détails',
       brief_ph:
         'Style, éléments à mettre, contraintes de texte, couleurs, références, etc.',
       links: 'Liens utiles (plusieurs possibles)',
       add_link: '+ Ajouter un autre lien',
       deadline: 'Deadline',
-      send: 'Envoyer ✨',
+      send: 'Envoyer',
       sending: 'Envoi…',
-      ok: 'Merci ! Ta demande a bien été envoyée ✅',
+      ok: 'Merci ! Ta demande a bien été envoyée.',
       err: "Oups, l’envoi a échoué. Réessaie plus tard."
     },
     en: {
       title: 'Thumbnail request',
-      subtitle: 'Describe what you need, I’ll come back with proposals 🔥',
+      subtitle: 'Describe what you need, I’ll come back with proposals.',
       identity: 'Identity (who are you?)',
       identity_ph: 'Name / Alias / YouTube channel',
       video: 'Video title (or topic)',
-      video_ph: 'e.g. 100 days on Cobblemon',
+      video_ph: '100 days on Subnautica',
       brief: 'Brief / details',
       brief_ph:
         'Style, elements to include, text constraints, colors, references, etc.',
       links: 'Useful links (multiple)',
       add_link: '+ Add another link',
       deadline: 'Deadline',
-      send: 'Send ✨',
+      send: 'Send',
       sending: 'Sending…',
-      ok: 'Thanks! Your request has been sent ✅',
+      ok: 'Thanks! Your request has been sent.',
       err: 'Oops, failed to send. Please try again later.'
     }
   }[lang];
@@ -102,25 +102,52 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
-      {/* Soft white glow behind the card (no color) */}
+      {/* Soft white glow behind the card (N&B) */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[560px] w-[560px] rounded-full blur-3xl opacity-[0.10] bg-white" />
       </div>
 
+      {/* Gif en bas à droite (taille réduite) */}
+      <img
+        src="/snorlax.gif"
+        alt=""
+        className="fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none"
+      />
+
       {/* Card (glass + glow + subtle border) */}
       <div className="relative w-full max-w-xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
-        {/* top progress when loading */}
         {loading && <div className="progress" />}
 
-        {/* Lang toggle */}
+        {/* Lang toggle avec drapeaux FR/EN (SVG inline) */}
         <div className="absolute right-3 top-3 z-10">
           <button
             type="button"
             onClick={toggleLang}
-            className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/20 transition"
+            className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 border border-white/15 backdrop-blur-md hover:bg-white/20 transition flex items-center gap-2"
+            aria-label="Switch language"
             title="Switch language"
           >
-            {lang === 'fr' ? 'EN' : 'FR'}
+            {/* FR flag */}
+            <span className="inline-flex w-4 h-3 overflow-hidden rounded-[2px] ring-1 ring-white/30">
+              <svg viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg">
+                <rect width="1" height="2" x="0" y="0" fill="#0055A4" />
+                <rect width="1" height="2" x="1" y="0" fill="#ffffff" />
+                <rect width="1" height="2" x="2" y="0" fill="#EF4135" />
+              </svg>
+            </span>
+            <span className="text-[11px] tracking-wide">{lang === 'fr' ? 'FR' : 'EN'}</span>
+            {/* EN (UK) flag simplified */}
+            <span className="inline-flex w-4 h-3 overflow-hidden rounded-[2px] ring-1 ring-white/30">
+              <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="60" height="40" fill="#0A17A7" />
+                <path d="M0,0 60,40 M60,0 0,40" stroke="#ffffff" strokeWidth="8"/>
+                <path d="M0,0 60,40 M60,0 0,40" stroke="#CF142B" strokeWidth="4"/>
+                <rect x="26" width="8" height="40" fill="#ffffff"/>
+                <rect y="16" width="60" height="8" fill="#ffffff"/>
+                <rect x="27.5" width="5" height="40" fill="#CF142B"/>
+                <rect y="17.5" width="60" height="5" fill="#CF142B"/>
+              </svg>
+            </span>
           </button>
         </div>
 
@@ -221,11 +248,8 @@ export default function Home() {
               disabled={loading}
               className="relative w-full rounded-2xl px-6 py-3 font-semibold bg-white text-black shadow-lg hover:shadow-white/30 hover:scale-[1.01] transition active:scale-[.99] disabled:opacity-60"
             >
-              {/* outer glow */}
               <span className="pointer-events-none absolute inset-0 rounded-2xl shadow-[0_0_45px_rgba(255,255,255,0.12)]" />
-              <span className={loading ? 'opacity-0' : 'opacity-100'}>
-                {t.send}
-              </span>
+              <span className={loading ? 'opacity-0' : 'opacity-100'}>{t.send}</span>
               {loading && (
                 <span className="absolute inset-0 flex items-center justify-center">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
