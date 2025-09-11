@@ -1,6 +1,12 @@
+// pages/[client].js
 import { useEffect, useState } from 'react';
 
-export async function getServerSideProps({ params }) {
+export async function getStaticPaths() {
+  // Pas de paths connus à l'avance -> génération à la demande
+  return { paths: [], fallback: 'blocking' };
+}
+
+export async function getStaticProps({ params }) {
   const { client } = params;
   const fs = (await import('fs')).default;
   const path = (await import('path')).default;
@@ -14,7 +20,12 @@ export async function getServerSideProps({ params }) {
       .map((f) => `/clients/${client}/${f}`);
 
     if (!images.length) return { notFound: true };
-    return { props: { slug: client, images } };
+
+    return {
+      props: { slug: client, images },
+      // Revalidé régulièrement (ISR)
+      revalidate: 60
+    };
   } catch {
     return { notFound: true };
   }
@@ -79,9 +90,7 @@ export default function ClientPreview({ slug, images }) {
         })
       });
       setStatus(r.ok ? 'ok' : 'err');
-      if (r.ok) {
-        setComment('');
-      }
+      if (r.ok) setComment('');
     } catch {
       setStatus('err');
     } finally {
@@ -166,7 +175,6 @@ export default function ClientPreview({ slug, images }) {
               />
             </div>
 
-            {/* Hidden ref image input just for clarity (not required) */}
             {refImage && (
               <p className="text-xs text-zinc-400 break-all">
                 {t.selected}: <span className="text-zinc-200">{refImage}</span>
@@ -184,7 +192,7 @@ export default function ClientPreview({ slug, images }) {
                 <span className="absolute inset-0 flex items-center justify-center">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="currentColor"></path>
+                    <path className="opacity-75" d="M4 12a 8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="currentColor"></path>
                   </svg>
                 </span>
               )}
