@@ -57,6 +57,14 @@ export default function Home() {
     }
   }[lang];
 
+  // helper for required asterisk (red) + accessible text
+  const Req = () => (
+    <>
+      <span className="text-red-500 ml-1" aria-hidden="true">*</span>
+      <span className="sr-only"> required</span>
+    </>
+  );
+
   // --- Form state ---
   const [status, setStatus] = useState(null); // 'ok' | 'error' | null
   const [loading, setLoading] = useState(false);
@@ -165,7 +173,9 @@ export default function Home() {
 
           <form onSubmit={onSubmit} className="space-y-5">
             <div>
-              <label className="text-sm text-zinc-300">{t.identity}</label>
+              <label className="text-sm text-zinc-300 flex items-center">
+                {t.identity} <Req />
+              </label>
               <input
                 name="Identité"
                 type="text"
@@ -175,7 +185,7 @@ export default function Home() {
               />
             </div>
 
-            {/* NEW: Contact (optional) */}
+            {/* Contact (optional) */}
             <div>
               <label className="text-sm text-zinc-300">{t.contact}</label>
               <input
@@ -187,7 +197,9 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="text-sm text-zinc-300">{t.video}</label>
+              <label className="text-sm text-zinc-300 flex items-center">
+                {t.video} <Req />
+              </label>
               <input
                 name="Titre"
                 type="text"
@@ -198,7 +210,9 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="text-sm text-zinc-300">{t.brief}</label>
+              <label className="text-sm text-zinc-300 flex items-center">
+                {t.brief} <Req />
+              </label>
               <textarea
                 name="Brief"
                 rows="5"
