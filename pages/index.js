@@ -46,16 +46,11 @@ export default function Home() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-zinc-300">Nom</label>
-                <input name="Nom" type="text" required
-                  className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-2 focus:ring-white/30 placeholder-zinc-400" placeholder="Votre nom" />
-              </div>
-              <div>
-                <label className="text-sm text-zinc-300">Email</label>
-                <input name="Email" type="email" required
-                  className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-2 focus:ring-white/30 placeholder-zinc-400" placeholder="email@exemple.com" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="text-sm text-zinc-300">Identité (qui êtes‑vous ?)</label>
+                <input name="Identité" type="text" required
+                  className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-2 focus:ring-white/30 placeholder-zinc-400" placeholder="Nom / Pseudo / Chaine YouTube" />
               </div>
             </div>
 
@@ -78,6 +73,12 @@ export default function Home() {
                 <input name="Liens" type="url"
                   className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-2 focus:ring-white/30 placeholder-zinc-400" placeholder="Drive, référentiel, vidéo…" />
               </div>
+              <div>
+                <label className="text-sm text-zinc-300">Deadline</label>
+                <input name="Deadline" type="date"
+                  className="mt-1 w-full rounded-xl bg-black/40 border border-white/15 px-4 py-3 outline-none focus:ring-2 focus:ring-white/30 placeholder-zinc-400" />
+              </div>
+            </div>
               <div>
                 <label className="text-sm text-zinc-300">Deadline</label>
                 <input name="Deadline" type="date"
