@@ -51,7 +51,6 @@ export default function ClientPreview({ slug, images, libImages }) {
     fr: {
       title: `Preview – ${slug}`,
       tip: 'Clique sur une image pour la définir comme référence.',
-      selected: 'Image de référence',
       comment: 'Votre feedback sur la miniature sélectionnée',
       send: 'Envoyer le feedback',
       ok: 'Merci ! Feedback envoyé.',
@@ -65,7 +64,6 @@ export default function ClientPreview({ slug, images, libImages }) {
     en: {
       title: `Preview – ${slug}`,
       tip: 'Click an image to set it as reference.',
-      selected: 'Reference image',
       comment: 'Your feedback on the selected thumbnail',
       send: 'Send feedback',
       ok: 'Thanks! Feedback sent.',
