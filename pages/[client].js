@@ -1,6 +1,6 @@
-// pages/[client].js — SSR + Gallery + Fake YouTube feed (no external YouTube)
-// EN default + flags + persisted lang
-import { useEffect, useState } from 'react';
+// pages/[client].js — SSR + Gallery + Fake YouTube feed (uses public/ytpool/*)
+// EN default + flags + persisted lang, hide gif on mobile
+import { useEffect, useMemo, useState } from 'react';
 import fs from 'fs';
 import path from 'path';
 
@@ -11,21 +11,30 @@ export async function getServerSideProps({ params }) {
     const dir = path.join(process.cwd(), 'public', 'clients', client);
     if (!fs.existsSync(dir)) return { notFound: true };
 
-    const files = fs.readdirSync(dir);
-    const images = files
+    const clientFiles = fs.readdirSync(dir);
+    const images = clientFiles
       .filter((f) => /\.(png|jpe?g|webp|gif)$/i.test(f))
       .sort()
       .map((f) => `/clients/${client}/${f}`);
-
     if (!images.length) return { notFound: true };
 
-    return { props: { slug: client, images } };
+    // Library for fake YouTube
+    const libDir = path.join(process.cwd(), 'public', 'ytpool');
+    let libImages = [];
+    if (fs.existsSync(libDir)) {
+      const libFiles = fs.readdirSync(libDir);
+      libImages = libFiles
+        .filter((f) => /\.(png|jpe?g|webp|gif)$/i.test(f))
+        .map((f) => `/ytpool/${f}`);
+    }
+
+    return { props: { slug: client, images, libImages } };
   } catch {
     return { notFound: true };
   }
 }
 
-export default function ClientPreview({ slug, images }) {
+export default function ClientPreview({ slug, images, libImages }) {
   // Lang toggle (EN default) + persistence
   const [lang, setLang] = useState('en');
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function ClientPreview({ slug, images }) {
       ok: 'Merci ! Feedback envoyé.',
       err: "Oups, échec de l’envoi.",
       gallery: 'Galerie',
-      ytMock: 'Aperçu style YouTube (fake)',
+      ytMock: 'Aperçu style YouTube (fake 4×3)',
       mockNote: "Aperçu local simulé — ce n'est pas YouTube.",
     },
     en: {
@@ -60,7 +69,7 @@ export default function ClientPreview({ slug, images }) {
       ok: 'Thanks! Feedback sent.',
       err: 'Oops, failed to send.',
       gallery: 'Gallery',
-      ytMock: 'YouTube-style preview (fake)',
+      ytMock: 'YouTube-style preview (fake 4×3)',
       mockNote: 'Local simulated preview — this is not YouTube.',
     }
   }[lang];
@@ -95,7 +104,62 @@ export default function ClientPreview({ slug, images }) {
     }
   }
 
-  // ------- Fake YouTube components -------
+  // ------- Fake YouTube helpers (seeded random for SSR/CSR consistency) -------
+  const selectedRef = refImage || images[0];
+
+  // tiny hash -> seed
+  function hashStr(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0) / 4294967296; // 0..1
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t ^= t + Math.imul(t ^ t >>> 7, 61 | t);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function seededRng(seedStr) {
+    // combine two hashes for better dispersion
+    const a = Math.floor(hashStr(seedStr) * 1e9);
+    return mulberry32(a);
+  }
+  function sampleK(pool, k, rng) {
+    const arr = [...pool];
+    // Fisher–Yates partial shuffle
+    for (let i = 0; i < Math.min(k, arr.length); i++) {
+      const j = i + Math.floor(rng() * (arr.length - i));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    let out = arr.slice(0, Math.min(k, arr.length));
+    // if not enough, cycle from start
+    while (out.length < k && pool.length) {
+      out.push(pool[out.length % pool.length]);
+    }
+    return out;
+  }
+
+  const ytGrid = useMemo(() => {
+    const pool = (libImages && libImages.length ? libImages : images).filter(Boolean);
+    const seed = `${slug}|${selectedRef}|${pool.length}`;
+    const rng = seededRng(seed);
+
+    const eleven = sampleK(pool, 11, rng);
+    // pick random slot 0..11 for the selected ref
+    const insertAt = Math.floor(rng() * 12);
+    const twelve = [...eleven];
+    twelve.splice(insertAt, 0, selectedRef);
+    // ensure length exactly 12
+    return twelve.slice(0, 12);
+  }, [slug, selectedRef, libImages, images]);
+  // ---------------------------------------------------------------------------
+
+  // Fake YouTube UI
   const TopBar = () => (
     <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/40">
       <div className="flex items-center gap-3">
@@ -113,15 +177,11 @@ export default function ClientPreview({ slug, images }) {
     </div>
   );
 
-  const YTCard = ({ src, highlight = false }) => (
-    <div className={`rounded-2xl overflow-hidden border transition ${highlight ? 'border-emerald-400/80 shadow-[0_0_0_3px_rgba(16,185,129,0.55)]' : 'border-white/10'}`}>
+  // No green outline here (only gallery shows selection outline)
+  const YTCard = ({ src }) => (
+    <div className="rounded-2xl overflow-hidden border border-white/10">
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-        <img
-          src={src}
-          alt="mock"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* duration pill */}
+        <img src={src} alt="mock" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute bottom-2 right-2 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white/90">
           12:34
         </div>
@@ -137,21 +197,17 @@ export default function ClientPreview({ slug, images }) {
     </div>
   );
 
-  const YTFeed = () => {
-    // Place la miniature choisie en tout premier, les autres cartes peuvent réutiliser d’autres fichiers du dossier
-    const thumbs = [refImage || images[0], ...images.slice(1, 7)];
-    return (
-      <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/30">
-        <TopBar />
-        <div className="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {thumbs.map((src, i) => (
-            <YTCard key={i} src={src} highlight={i === 0} />
-          ))}
-        </div>
+  const YTFeed = () => (
+    <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/30">
+      <TopBar />
+      {/* Grid 4×3 fixed */}
+      <div className="p-4 grid grid-cols-4 gap-4">
+        {ytGrid.map((src, i) => (
+          <YTCard key={`${src}-${i}`} src={src} />
+        ))}
       </div>
-    );
-  };
-  // --------------------------------------
+    </div>
+  );
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
@@ -160,12 +216,8 @@ export default function ClientPreview({ slug, images }) {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[560px] w-[560px] rounded-full blur-3xl opacity-[0.10] bg-white" />
       </div>
 
-      {/* Gif */}
-     <img
-  src="/snorlax.gif"
-  alt=""
-  className="hidden md:block fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none"
-/>
+      {/* Gif (hidden on mobile) */}
+      <img src="/snorlax.gif" alt="" className="hidden md:block fixed bottom-4 right-4 w-16 h-16 opacity-75 pointer-events-none" />
 
       <div className="relative w-full max-w-5xl rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
         {/* Lang toggle with flags */}
