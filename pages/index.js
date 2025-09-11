@@ -39,7 +39,7 @@ export default function Home() {
       identity: 'Identity (who are you?)',
       identity_ph: 'Name / Alias / YouTube channel',
       video: 'Video title (or topic)',
-      video_ph: '100 days on Subnautica',
+      video_ph: 'Ex: 100 days on Subnautica',
       brief: 'Brief / details',
       brief_ph:
         'Style, elements to include, text constraints, colors, references, etc.',
