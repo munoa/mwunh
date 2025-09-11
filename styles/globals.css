@@ -1,21 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Background gradient + subtle grain */
+/* App base */
 html, body, #__next { height: 100%; }
 body {
-  @apply bg-gradient-to-br from-zinc-900 via-black to-zinc-800 text-white;
+  @apply font-sans text-white;
+  background: radial-gradient(1200px 600px at 10% -10%, rgba(147, 51, 234, .25), transparent 60%),
+              radial-gradient(800px 400px at 110% 110%, rgba(34, 197, 94, .20), transparent 60%),
+              linear-gradient(135deg, #0b0b0d 0%, #0f1115 40%, #0a0a0c 100%);
 }
+
 /* Grain overlay */
 .grain:before {
   content: "";
   position: fixed;
   inset: 0;
   background-image: url('/grain.png');
-  opacity: .15;
+  opacity: .12;
   mix-blend-mode: overlay;
   pointer-events: none;
 }
+
+/* Indeterminate top progress bar */
+.progress {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  overflow: hidden;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+.progress::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 40%;
+  left: -40%;
+  animation: indeterminate 1.2s infinite ease-out;
+  background: linear-gradient(90deg, rgba(255,255,255,.2), rgba(255,255,255,.6), rgba(255,255,255,.2));
+}
+@keyframes indeterminate {
+  0% { left: -40%; }
+  60% { left: 60%; }
+  100% { left: 110%; }
+}
+
 /* Smooth */
 * { scroll-behavior: smooth; }
