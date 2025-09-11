@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import AdminCreateForm from "@/components/AdminCreateForm";
 import ProjectList from "@/components/ProjectList";
 import { prisma } from "@/lib/prisma";
