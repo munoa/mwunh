@@ -6,10 +6,8 @@ import ThumbnailCard from "@/components/ThumbnailCard";
 import { notFound } from "next/navigation";
 
 export default async function ClientPage({ params }: { params: { token: string }}) {
-  if (!process.env.DATABASE_URL) {
-    // Pendant le build, on ne touche pas la DB → no-op
-    return notFound();
-  }
+  // Pendant le build, on ne touche pas la DB → on évite le crash
+  if (!process.env.DATABASE_URL) return notFound();
 
   const project = await prisma.project.findUnique({
     where: { token: params.token },
