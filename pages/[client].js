@@ -1,4 +1,4 @@
-// pages/[client].js — Gallery + Fake YouTube + Lightbox (no green outline/badge)
+// pages/[client].js — Gallery + Fake YouTube + Lightbox
 // EN default + flags + persisted lang, hide gif on mobile
 import { useEffect, useMemo, useState } from 'react';
 import fs from 'fs';
@@ -28,13 +28,16 @@ export async function getServerSideProps({ params }) {
         .map((f) => `/ytpool/${f}`);
     }
 
-    return { props: { slug: client, images, libImages } };
+    // Seed SSR pour varier la position à chaque visite
+    const seed = Math.floor(Math.random() * 1e9);
+
+    return { props: { slug: client, images, libImages, seed } };
   } catch {
     return { notFound: true };
   }
 }
 
-export default function ClientPreview({ slug, images, libImages }) {
+export default function ClientPreview({ slug, images, libImages, seed }) {
   // Lang (EN default) + persistence
   const [lang, setLang] = useState('en');
   useEffect(() => {
@@ -85,6 +88,12 @@ export default function ClientPreview({ slug, images, libImages }) {
   const [tab, setTab] = useState('gallery'); // 'gallery' | 'yt'
   const [lightboxSrc, setLightboxSrc] = useState(null);
 
+  // Incrémente un tick à chaque changement de sélection pour re-randomiser la position
+  const [shuffleTick, setShuffleTick] = useState(0);
+  useEffect(() => {
+    if (refImage) setShuffleTick((n) => n + 1);
+  }, [refImage]);
+
   // Close lightbox on ESC
   useEffect(() => {
     function onKey(e) {
@@ -120,7 +129,7 @@ export default function ClientPreview({ slug, images, libImages }) {
     }
   }
 
-  // ------- Fake YouTube helpers (seeded random for SSR/CSR consistency) -------
+  // ------- Fake YouTube helpers -------
   const selectedRef = refImage || images[0];
 
   function hashStr(s) {
@@ -158,16 +167,17 @@ export default function ClientPreview({ slug, images, libImages }) {
 
   const ytGrid = useMemo(() => {
     const pool = (libImages && libImages.length ? libImages : images).filter(Boolean);
-    const seed = `${slug}|${selectedRef}|${pool.length}`;
-    const rng = seededRng(seed);
+    // Seed inclut: slug, image sélectionnée, taille du pool, seed SSR et tick local
+    const seedStr = `${slug}|${selectedRef}|${pool.length}|${seed}|${shuffleTick}`;
+    const rng = seededRng(seedStr);
 
     const eleven = sampleK(pool, 11, rng);
-    const insertAt = Math.floor(rng() * 12);
+    const insertAt = Math.floor(rng() * 12); // position différente selon le seed/tick
     const twelve = [...eleven];
     twelve.splice(insertAt, 0, selectedRef);
     return twelve.slice(0, 12);
-  }, [slug, selectedRef, libImages, images]);
-  // ---------------------------------------------------------------------------
+  }, [slug, selectedRef, libImages, images, seed, shuffleTick]);
+  // ------------------------------------
 
   // Fake YouTube UI
   const TopBar = () => (
@@ -187,7 +197,6 @@ export default function ClientPreview({ slug, images, libImages }) {
     </div>
   );
 
-  // Minified meta row (no extra right dot)
   const YTCard = ({ src }) => (
     <div className="rounded-2xl overflow-hidden border border-white/10">
       <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -296,7 +305,10 @@ export default function ClientPreview({ slug, images, libImages }) {
                   <div
                     key={i}
                     onClick={() => setRefImage(url)}
-                    className="group relative rounded-xl overflow-hidden border bg-black/40 transition cursor-pointer border-white/10 hover:border-white/20"
+                    className={`group relative rounded-xl overflow-hidden border bg-black/40 transition cursor-pointer
+                      ${selected
+                        ? 'border-emerald-400/80 shadow-[0_0_0_3px_rgba(16,185,129,0.55)]'
+                        : 'border-white/10 hover:border-white/20'}`}
                     title="Set as reference"
                   >
                     <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
