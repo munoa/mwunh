@@ -1,4 +1,4 @@
-// pages/[client].js — Gallery + Fake YouTube + Lightbox for selected image
+// pages/[client].js — Gallery + Fake YouTube + Lightbox (no green outline/badge)
 // EN default + flags + persisted lang, hide gif on mobile
 import { useEffect, useMemo, useState } from 'react';
 import fs from 'fs';
@@ -51,6 +51,7 @@ export default function ClientPreview({ slug, images, libImages }) {
     fr: {
       title: `Preview – ${slug}`,
       tip: 'Clique sur une image pour la définir comme référence.',
+      selected: 'Image de référence',
       comment: 'Votre feedback sur la miniature sélectionnée',
       send: 'Envoyer le feedback',
       ok: 'Merci ! Feedback envoyé.',
@@ -64,6 +65,7 @@ export default function ClientPreview({ slug, images, libImages }) {
     en: {
       title: `Preview – ${slug}`,
       tip: 'Click an image to set it as reference.',
+      selected: 'Reference image',
       comment: 'Your feedback on the selected thumbnail',
       send: 'Send feedback',
       ok: 'Thanks! Feedback sent.',
@@ -294,8 +296,7 @@ export default function ClientPreview({ slug, images, libImages }) {
                   <div
                     key={i}
                     onClick={() => setRefImage(url)}
-                    className={`group relative rounded-xl overflow-hidden border bg-black/40 transition cursor-pointer
-                      ${selected ? '' : ''}`}
+                    className="group relative rounded-xl overflow-hidden border bg-black/40 transition cursor-pointer border-white/10 hover:border-white/20"
                     title="Set as reference"
                   >
                     <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
@@ -308,21 +309,15 @@ export default function ClientPreview({ slug, images, libImages }) {
                     </div>
 
                     {selected && (
-                      <>
-                        <div className="absolute left-2 top-2 text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-200 backdrop-blur border border-emerald-400/50">
-                          {t.selected}
-                        </div>
-                        {/* view larger button under the selected image */}
-                        <div className="border-t border-white/10 bg-black/30 p-3">
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setLightboxSrc(url); }}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-black hover:scale-[1.02] active:scale-[.98] transition shadow"
-                          >
-                            {t.viewLarge}
-                          </button>
-                        </div>
-                      </>
+                      <div className="border-t border-white/10 bg-black/30 p-3">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setLightboxSrc(url); }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-black hover:scale-[1.02] active:scale-[.98] transition shadow"
+                        >
+                          {t.viewLarge}
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
