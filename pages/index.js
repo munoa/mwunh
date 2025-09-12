@@ -123,9 +123,8 @@ export default function Home() {
   const Req = () => <span className="text-red-500 ml-1" aria-hidden="true">*</span>;
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-16 relative">
-      {/* Soft white glow behind the card (B&W) */}
-      <div className="pointer-events-none absolute inset-0">
+<main className="min-h-screen flex items-center justify-center px-6 py-16 relative overflow-x-hidden">
+  <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[560px] w-[560px] rounded-full blur-3xl opacity-[0.10] bg-white" />
       </div>
 
