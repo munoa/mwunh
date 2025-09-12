@@ -295,7 +295,7 @@ export default function ClientPreview({ slug, images, libImages }) {
                     key={i}
                     onClick={() => setRefImage(url)}
                     className={`group relative rounded-xl overflow-hidden border bg-black/40 transition cursor-pointer
-                      ${selected ? 'border-emerald-400/80 shadow-[0_0_0_3px_rgba(16,185,129,0.55)]' : 'border-white/10 hover:border-white/20'}`}
+                      ${selected ? '' : ''}`}
                     title="Set as reference"
                   >
                     <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
